@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Muryar Banki – USSD Voice Simulator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', sans-serif;
+    padding: 20px;
+  }
+
+  .phone {
+    background: #1a1a2e;
+    border-radius: 40px;
+    width: 340px;
+    min-height: 620px;
+    box-shadow: 0 0 60px rgba(0,200,255,0.15), 0 0 0 6px #0d0d1a;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .phone-top {
+    background: #0d0d1a;
+    padding: 12px;
+    display: flex;
+    justify-content: center;
+  }
+  .notch {
+    width: 80px; height: 10px;
+    background: #333;
+    border-radius: 10px;
+  }
+
+  .screen {
+    background: #0b0b1a;
+    flex: 1;
+    padding: 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+  }
+
+  .brand {
+    text-align: center;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #1e2a4a;
+  }
+  .brand h2 {
+    color: #00d4ff;
+    font-size: 18px;
+    letter-spacing: 1px;
+  }
+  .brand p {
+    color: #4a5a7a;
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  .display-box {
+    background: #0f1a30;
+    border: 1px solid #1e3050;
+    border-radius: 12px;
+    padding: 14px;
+    min-height: 90px;
+    font-size: 13px;
+    color: #c8d8f0;
+    line-height: 1.7;
+    white-space: pre-line;
+  }
+
+  .voice-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #0a1520;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #4a9eff;
+  }
+  .voice-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #4a9eff;
+    animation: pulse 1.2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+  .voice-status.hidden { display: none; }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+  }
+  .input-row input {
+    flex: 1;
+    background: #101830;
+    border: 1px solid #1e3a60;
+    border-radius: 10px;
+    color: #e0eeff;
+    padding: 10px 14px;
+    font-size: 15px;
+    outline: none;
+    letter-spacing: 2px;
+  }
+  .input-row input:focus {
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 2px rgba(0,212,255,0.15);
+  }
+  .input-row input::placeholder { color: #2a4060; letter-spacing: 1px; }
+
+  .btn-send {
+    background: #00d4ff;
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-send:hover { background: #00b8e0; }
+  .btn-send:disabled { background: #1a3a50; color: #3a6080; cursor: not-allowed; }
+
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .key {
+    background: #0f1e35;
+    border: 1px solid #1e3050;
+    border-radius: 12px;
+    color: #c8d8f0;
+    font-size: 20px;
+    font-weight: 600;
+    padding: 14px 0;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .key:hover { background: #172840; border-color: #00d4ff; color: #00d4ff; }
+  .key:active { transform: scale(0.94); }
+  .key.del { font-size: 14px; color: #ff6060; }
+  .key.send-key { background: #004466; color: #00d4ff; font-size: 14px; }
+
+  .step-label {
+    font-size: 11px;
+    color: #3a6080;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .pill {
+    display: inline-block;
+    background: #001a2e;
+    border: 1px solid #00d4ff33;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px;
+    color: #00d4ff;
+  }
+
+  .success-box {
+    background: #001a0e;
+    border: 1px solid #00cc66;
+    border-radius: 12px;
+    padding: 14px;
+    color: #00cc66;
+    text-align: center;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .success-box .check { font-size: 32px; margin-bottom: 6px; }
+
+  .restart-btn {
+    background: transparent;
+    border: 1px solid #1e3050;
+    border-radius: 10px;
+    color: #4a9eff;
+    padding: 10px;
+    font-size: 13px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+  }
+  .restart-btn:hover { background: #0f1e35; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="phone-top"><div class="notch"></div></div>
+
+  <div class="screen">
+    <div class="brand">
+      <h2>&#128264; Muryar Banki</h2>
+      <p>Voice Banking Simulator</p>
+    </div>
+
+    <!-- Voice status indicator -->
+    <div class="voice-status hidden" id="voiceStatus">
+      <div class="voice-dot"></div>
+      <span id="voiceText">Speaking...</span>
+    </div>
+
+    <!-- Display area -->
+    <div class="display-box" id="display">Enter your USSD code to begin.</div>
+
+    <!-- Step label -->
+    <div class="step-label" id="stepLabel">USSD Entry</div>
+
+    <!-- Input row -->
+    <div class="input-row" id="inputRow">
+      <input type="text" id="mainInput" placeholder="*770#" maxlength="30"/>
+      <button class="btn-send" id="sendBtn" onclick="handleSend()">OK</button>
+    </div>
+
+    <!-- Keypad -->
+    <div class="keypad hidden" id="keypad">
+      <div class="key" onclick="press('1')">1</div>
+      <div class="key" onclick="press('2')">2</div>
+      <div class="key" onclick="press('3')">3</div>
+      <div class="key" onclick="press('4')">4</div>
+      <div class="key" onclick="press('5')">5</div>
+      <div class="key" onclick="press('6')">6</div>
+      <div class="key" onclick="press('7')">7</div>
+      <div class="key" onclick="press('8')">8</div>
+      <div class="key" onclick="press('9')">9</div>
+      <div class="key del" onclick="press('del')">⌫</div>
+      <div class="key" onclick="press('0')">0</div>
+      <div class="key send-key" onclick="press('send')">OK</div>
+    </div>
+
+    <!-- Success -->
+    <div class="hidden" id="successBox">
+      <div class="success-box">
+        <div class="check">✅</div>
+        <strong id="successMsg">Transaction Complete!</strong><br/>
+        <span id="successSub" style="font-size:12px; color:#00aa55;"></span>
+      </div>
+    </div>
+
+    <!-- Restart -->
+    <button class="restart-btn hidden" id="restartBtn" onclick="restart()">&#8635; Start Over</button>
+  </div>
+</div>
+
+<script>
+const STEPS = {
+  USSD: 'ussd',
+  LANGUAGE: 'language',
+  MENU: 'menu',
+  TRANSFER_ACCOUNT: 'transfer_account',
+  PIN: 'pin',
+  DONE: 'done'
+};
+
+const LANG_DATA = {
+  '1': {
+    name: 'English',
+    code: 'en-NG',
+    greet: 'Welcome to Muryar Banki.',
+    menuPrompt: 'Press 1 to check your account balance.\nPress 2 to buy airtime.\nPress 3 to transfer money.',
+    menuSpeak: 'Press 1 to check your account balance. Press 2 to buy airtime. Press 3 to transfer money.',
+    pinPrompt: 'Please enter your 4-digit account PIN on the keypad.',
+    pinSpeak: 'Please enter your 4-digit account PIN.',
+    accountPrompt: 'Please enter the recipient account number.',
+    accountSpeak: 'Please enter the recipient account number.',
+    done: 'Transaction complete! Thank you for using Muryar Banki.',
+    balance: 'Your account balance is 45,000 Naira.',
+    airtime: 'Airtime purchase successful.',
+    transfer: 'Money transfer successful.'
+  },
+  '2': {
+    name: 'Hausa',
+    code: 'ha',
+    greet: 'Barka da zuwa Muryar Banki.',
+    menuPrompt: 'Danna 1 don duba kuɗin asusunka.\nDanna 2 don siya airtime.\nDanna 3 don canja kuɗi.',
+    menuSpeak: 'Danna 1 don duba kuɗin asusunka. Danna 2 don siya airtime. Danna 3 don canja kuɗi.',
+    pinPrompt: 'Don Allah shigar da PIN ɗin asusunka na lambobi 4.',
+    pinSpeak: 'Don Allah shigar da PIN ɗin asusunka.',
+    accountPrompt: 'Shigar da lambar asusun wanda kake aikawa.',
+    accountSpeak: 'Shigar da lambar asusun wanda kake aikawa.',
+    done: 'Canjin ya cika! Na gode da amfani da Muryar Banki.',
+    balance: 'Kuɗin asusunka naira dubu arba\'in da biyar ne.',
+    airtime: 'An sayi airtime cikin nasara.',
+    transfer: 'An canja kuɗi cikin nasara.'
+  },
+  '3': {
+    name: 'Yoruba',
+    code: 'yo',
+    greet: 'E kaabo si Muryar Banki.',
+    menuPrompt: 'Tẹ 1 lati ṣayẹwo owo rẹ.\nTẹ 2 lati ra airtime.\nTẹ 3 lati gbigbe owo.',
+    menuSpeak: 'Tẹ 1 lati ṣayẹwo owo rẹ. Tẹ 2 lati ra airtime. Tẹ 3 lati gbigbe owo.',
+    pinPrompt: 'Jọwọ tẹ PIN akọọlẹ rẹ ti iṣiro 4 lori bọtini.',
+    pinSpeak: 'Jọwọ tẹ PIN akọọlẹ rẹ.',
+    accountPrompt: 'Jọwọ tẹ nọmba akọọlẹ olugba.',
+    accountSpeak: 'Jọwọ tẹ nọmba akọọlẹ olugba.',
+    done: 'Iṣowo ti pari! E dupe fun lilo Muryar Banki.',
+    balance: 'Iye owo ninu akọọlẹ rẹ jẹ naira ẹgbẹrin marun.',
+    airtime: 'Rira airtime ti ṣaṣeyọri.',
+    transfer: 'Gbigbe owo ti ṣaṣeyọri.'
+  },
+  '4': {
+    name: 'Igbo',
+    code: 'ig',
+    greet: 'Nnọọ na Muryar Banki.',
+    menuPrompt: 'Pịa 1 iji lelee ego gị.\nPịa 2 iji zụta airtime.\nPịa 3 iji bugharị ego.',
+    menuSpeak: 'Pịa 1 iji lelee ego gị. Pịa 2 iji zụta airtime. Pịa 3 iji bugharị ego.',
+    pinPrompt: 'Biko tinye PIN akanta gị nke nọmba 4 na keyboard.',
+    pinSpeak: 'Biko tinye PIN akanta gị.',
+    accountPrompt: 'Biko tinye nọmba akanta onye ọ bụla.',
+    accountSpeak: 'Biko tinye nọmba akanta onye ọ bụla.',
+    done: 'Azụmahịa emechara! Daalụ maka iji Muryar Banki.',
+    balance: 'Ego dị n\'akanta gị bụ naira iri atọ na abụọ puku.',
+    airtime: 'Ịzụta airtime gara nke ọma.',
+    transfer: 'Ịbufe ego gara nke ọma.'
+  },
+  '5': {
+    name: 'Pidgin',
+    code: 'en-NG',
+    greet: 'Welcome to Muryar Banki. You don enter.',
+    menuPrompt: 'Press 1 to check your balance.\nPress 2 to buy airtime.\nPress 3 to send money.',
+    menuSpeak: 'Press 1 to check your balance. Press 2 to buy airtime. Press 3 to send money.',
+    pinPrompt: 'Abeg put your 4-digit PIN for the keypad.',
+    pinSpeak: 'Abeg put your 4-digit PIN.',
+    accountPrompt: 'Abeg put the account number of who you wan send money.',
+    accountSpeak: 'Abeg put the account number of who you wan send money.',
+    done: 'Transaction don complete! E don do. Thank you for using Muryar Banki.',
+    balance: 'Your account balance na 45,000 Naira.',
+    airtime: 'Airtime don enter your phone.',
+    transfer: 'You don send the money successfully.'
+  }
+};
+
+let step = STEPS.USSD;
+let lang = null;
+let menuChoice = null;
+let pinBuffer = '';
+let accountBuffer = '';
+let speaking = false;
+
+const display = document.getElementById('display');
+const stepLabel = document.getElementById('stepLabel');
+const inputRow = document.getElementById('inputRow');
+const mainInput = document.getElementById('mainInput');
+const sendBtn = document.getElementById('sendBtn');
+const keypad = document.getElementById('keypad');
+const successBox = document.getElementById('successBox');
+const restartBtn = document.getElementById('restartBtn');
+const voiceStatus = document.getElementById('voiceStatus');
+const voiceText = document.getElementById('voiceText');
+const successMsg = document.getElementById('successMsg');
+const successSub = document.getElementById('successSub');
+
+mainInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleSend();
+});
+
+function speak(text, langCode, callback) {
+  if (!window.speechSynthesis) {
+    if (callback) callback();
+    return;
+  }
+  window.speechSynthesis.cancel();
+  voiceStatus.classList.remove('hidden');
+  voiceText.textContent = 'Speaking...';
+
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = langCode || 'en-NG';
+  utter.rate = 0.92;
+  utter.pitch = 1.0;
+
+  utter.onend = () => {
+    voiceStatus.classList.add('hidden');
+    if (callback) callback();
+  };
+  utter.onerror = () => {
+    voiceStatus.classList.add('hidden');
+    if (callback) callback();
+  };
+
+  window.speechSynthesis.speak(utter);
+}
+
+function setDisplay(text) {
+  display.textContent = text;
+}
+
+function handleSend() {
+  const val = mainInput.value.trim();
+  mainInput.value = '';
+
+  if (step === STEPS.USSD) {
+    if (!val) return;
+    // Accept any USSD-like code
+    setDisplay(
+      'Select Language:\n\n1. English\n2. Hausa\n3. Yoruba\n4. Igbo\n5. Pidgin'
+    );
+    stepLabel.textContent = 'Language Selection';
+    step = STEPS.LANGUAGE;
+    speak(
+      'Welcome to Muryar Banki. Select your language. Press 1 for English. Press 2 for Hausa. Press 3 for Yoruba. Press 4 for Igbo. Press 5 for Pidgin.',
+      'en-NG'
+    );
+
+    // Switch to keypad
+    inputRow.classList.add('hidden');
+    keypad.classList.remove('hidden');
+    pinBuffer = '';
+    return;
+  }
+}
+
+function press(key) {
+  if (step === STEPS.LANGUAGE) {
+    if (!['1','2','3','4','5'].includes(key)) return;
+    lang = LANG_DATA[key];
+    setDisplay(
+      lang.name + '\n\n' + lang.greet + '\n\n' +
+      'What would you like to do?\n\n' + lang.menuPrompt
+    );
+    stepLabel.textContent = 'Main Menu';
+    step = STEPS.MENU;
+    speak(lang.greet + ' ' + lang.menuSpeak, lang.code);
+    pinBuffer = '';
+    return;
+  }
+
+  if (step === STEPS.MENU) {
+    if (!['1','2','3'].includes(key)) return;
+    menuChoice = key;
+    if (key === '1') {
+      // Check balance – go straight to PIN
+      setDisplay(lang.menuPrompt.split('\n')[0] + '\n\n' + lang.pinPrompt);
+      stepLabel.textContent = 'Enter PIN';
+      step = STEPS.PIN;
+      speak(lang.pinSpeak, lang.code);
+      pinBuffer = '';
+    } else if (key === '2') {
+      // Buy airtime – go to PIN
+      setDisplay(lang.menuPrompt.split('\n')[1] + '\n\n' + lang.pinPrompt);
+      stepLabel.textContent = 'Enter PIN';
+      step = STEPS.PIN;
+      speak(lang.pinSpeak, lang.code);
+      pinBuffer = '';
+    } else if (key === '3') {
+      // Transfer – ask for account number first
+      setDisplay(lang.accountPrompt);
+      stepLabel.textContent = 'Account Number';
+      step = STEPS.TRANSFER_ACCOUNT;
+      speak(lang.accountSpeak, lang.code);
+      accountBuffer = '';
+      pinBuffer = '';
+    }
+    return;
+  }
+
+  if (step === STEPS.TRANSFER_ACCOUNT) {
+    if (key === 'del') {
+      accountBuffer = accountBuffer.slice(0, -1);
+    } else if (key === 'send') {
+      if (accountBuffer.length < 6) {
+        setDisplay(lang.accountPrompt + '\n\n⚠ Enter a valid account number (min 6 digits).');
+        return;
+      }
+      setDisplay(lang.pinPrompt);
+      stepLabel.textContent = 'Enter PIN';
+      step = STEPS.PIN;
+      speak(lang.pinSpeak, lang.code);
+      pinBuffer = '';
+      accountBuffer = '';
+      return;
+    } else if (/\d/.test(key)) {
+      if (accountBuffer.length < 10) accountBuffer += key;
+    }
+    setDisplay(lang.accountPrompt + '\n\nAccount: ' + accountBuffer);
+    return;
+  }
+
+  if (step === STEPS.PIN) {
+    if (key === 'del') {
+      pinBuffer = pinBuffer.slice(0, -1);
+    } else if (key === 'send') {
+      if (pinBuffer.length < 4) {
+        setDisplay(lang.pinPrompt + '\n\n⚠ PIN must be at least 4 digits.');
+        return;
+      }
+      processDone();
+      return;
+    } else if (/\d/.test(key)) {
+      if (pinBuffer.length < 4) pinBuffer += key;
+      if (pinBuffer.length === 4) {
+        // Auto-submit
+        setTimeout(() => processDone(), 400);
+      }
+    }
+    const masked = '●'.repeat(pinBuffer.length) + '○'.repeat(4 - pinBuffer.length);
+    setDisplay(lang.pinPrompt + '\n\nPIN: ' + masked);
+    return;
+  }
+}
+
+function processDone() {
+  step = STEPS.DONE;
+  keypad.classList.add('hidden');
+  successBox.classList.remove('hidden');
+  restartBtn.classList.remove('hidden');
+  stepLabel.textContent = 'Complete';
+
+  let detail = '';
+  if (menuChoice === '1') detail = lang.balance;
+  else if (menuChoice === '2') detail = lang.airtime;
+  else if (menuChoice === '3') detail = lang.transfer;
+
+  successMsg.textContent = lang.done.split('!')[0] + '!';
+  successSub.textContent = detail;
+
+  speak(lang.done + ' ' + detail, lang.code);
+}
+
+function restart() {
+  step = STEPS.USSD;
+  lang = null;
+  menuChoice = null;
+  pinBuffer = '';
+  accountBuffer = '';
+
+  setDisplay('Enter your USSD code to begin.');
+  stepLabel.textContent = 'USSD Entry';
+
+  mainInput.value = '';
+  inputRow.classList.remove('hidden');
+  keypad.classList.add('hidden');
+  successBox.classList.add('hidden');
+  restartBtn.classList.add('hidden');
+  voiceStatus.classList.add('hidden');
+
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+}
+</script>
+</body>
+</html>
