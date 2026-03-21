@@ -1,7 +1,8 @@
 import africastalking
+import os
 
 username = "sandbox"
-api_key = "YOUR_API_KEY"   # 🔴 Replace this
+api_key = os.environ.get("AT_API_KEY")
 
 africastalking.initialize(username, api_key)
 
