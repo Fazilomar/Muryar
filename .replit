@@ -38,7 +38,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd muryar-banki && PORT=5000 python main.py"
+args = "cd muryar-banki && uvicorn main:app --host 0.0.0.0 --port 5000"
 waitForPort = 5000
 
 [[ports]]
