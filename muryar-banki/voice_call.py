@@ -1,18 +1,30 @@
-from typing import Callable
+import os
+import requests
 
 
-def handle_voice_call(ai_handler: Callable[[str], str]):
-    print("Voice call session started. Type your query (or 'quit' to exit).\n")
+def make_call(phone: str) -> dict:
+    api_key = os.environ.get("AT_API_KEY", "")
+    username = os.environ.get("AT_USERNAME", "sandbox")
+    caller_id = os.environ.get("AT_CALLER_ID", "")
+    base_url = os.environ.get("BASE_URL", "")
 
-    while True:
-        user_input = input("You: ").strip()
+    url = "https://voice.africastalking.com/call"
 
-        if not user_input:
-            continue
+    payload = {
+        "username": username,
+        "to": phone,
+        "from": caller_id,
+        "callbackUrl": f"{base_url}/voice",
+    }
 
-        if user_input.lower() in ("quit", "exit", "bye"):
-            print("Bank: Thank you for using Muryar Banki. Goodbye!")
-            break
+    headers = {
+        "apiKey": api_key,
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",
+    }
 
-        response = ai_handler(user_input)
-        print(f"Bank: {response}\n")
+    try:
+        response = requests.post(url, data=payload, headers=headers)
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
