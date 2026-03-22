@@ -207,6 +207,14 @@ body {
 .restart-btn:hover{background:#0a1830;}
 
 .hidden{display:none!important;}
+
+/* Browser compat banner */
+.compat-banner {
+  border-radius: 10px; padding: 8px 12px;
+  font-size: 11px; line-height: 1.5; text-align: center;
+}
+.compat-banner.ok  { background:#001a0e; border:1px solid #00cc6644; color:#00aa55; }
+.compat-banner.warn{ background:#1a1000; border:1px solid #ffaa0044; color:#ffaa00; }
 </style>
 </head>
 <body>
@@ -225,6 +233,8 @@ body {
       <h2>🔈 Muryar Banki</h2>
       <p>Voice Banking · Talk To Your Bank</p>
     </div>
+
+    <div class="compat-banner" id="compatBanner"></div>
 
     <div class="status-bar hidden" id="statusBar">
       <div class="dot"></div>
@@ -388,7 +398,7 @@ const LANGS = {
     }
   },
   '2':{
-    name:'Hausa', code:'ha',
+    name:'Hausa', code:'en-NG',
     greet:'Barka da zuwa Muryar Banki!',
     menuSpeak:'Me kake so ka yi? Ce: Duba Kuɗi, Siya Airtime, ko Aika Kuɗi. Ko danna zaɓi.',
     menuLabels:['Duba Kuɗi','Siya Airtime','Aika Kuɗi'],
@@ -415,7 +425,7 @@ const LANGS = {
     }
   },
   '3':{
-    name:'Yoruba', code:'yo',
+    name:'Yoruba', code:'en-NG',
     greet:'E kaabo si Muryar Banki!',
     menuSpeak:'Kini o fẹ ṣe? Sọ: Ṣayẹwo Owo, Ra Airtime, tabi Firanṣẹ Owo. Tabi tẹ aṣayan.',
     menuLabels:['Ṣayẹwo Owo','Ra Airtime','Firanṣẹ Owo'],
@@ -442,7 +452,7 @@ const LANGS = {
     }
   },
   '4':{
-    name:'Igbo', code:'ig',
+    name:'Igbo', code:'en-NG',
     greet:'Nnọọ na Muryar Banki!',
     menuSpeak:'Gịnị ịchọ ime? Kwuo: Lelee Ego, Zụta Airtime, ma ọ bụ Zipụ Ego. Ma ọ bụ pịa nhọrọ.',
     menuLabels:['Lelee Ego','Zụta Airtime','Zipụ Ego'],
@@ -496,6 +506,23 @@ const LANGS = {
     }
   }
 };
+
+// ── Browser compatibility check ──────────────────────────────────
+(function() {
+  const banner = document.getElementById('compatBanner');
+  const hasTTS = !!window.speechSynthesis;
+  const hasSR  = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  if (hasTTS && hasSR) {
+    banner.className = 'compat-banner ok';
+    banner.textContent = '✅ Voice ready — tap the mic 🎙️ to speak, or tap buttons to select.';
+  } else if (hasTTS && !hasSR) {
+    banner.className = 'compat-banner warn';
+    banner.textContent = '🔊 Voice output works. 🎙️ Voice input needs Chrome or Edge — use buttons for now.';
+  } else {
+    banner.className = 'compat-banner warn';
+    banner.textContent = '⚠️ For full voice experience, open this link in Google Chrome or Microsoft Edge.';
+  }
+})();
 
 // ── State ────────────────────────────────────────────────────────
 const S = {
@@ -575,17 +602,44 @@ function genBalance() {
 }
 
 // ── Speech synthesis ─────────────────────────────────────────────
+let voicesReady = false;
+function ensureVoices(cb) {
+  if (voicesReady || window.speechSynthesis.getVoices().length > 0) {
+    voicesReady = true; cb(); return;
+  }
+  window.speechSynthesis.onvoiceschanged = () => {
+    voicesReady = true;
+    window.speechSynthesis.onvoiceschanged = null;
+    cb();
+  };
+  setTimeout(() => { voicesReady = true; cb(); }, 2000);
+}
+
 function speak(text, callback) {
   clearTimeout(autoListenTimer);
   if (!window.speechSynthesis) { if(callback) callback(); return; }
   window.speechSynthesis.cancel();
-  showStatus('speaking','Speaking...');
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = lang ? lang.code : 'en-NG';
-  u.rate = 0.88; u.pitch = 1.0;
-  u.onend = () => { hideStatus(); if(callback) callback(); };
-  u.onerror = () => { hideStatus(); if(callback) callback(); };
-  window.speechSynthesis.speak(u);
+
+  ensureVoices(() => {
+    showStatus('speaking','Speaking...');
+    const u = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices();
+    const preferredCode = lang ? lang.code : 'en-US';
+    const matched = voices.find(v => v.lang === preferredCode)
+      || voices.find(v => v.lang.startsWith('en-'))
+      || voices[0];
+    if (matched) u.voice = matched;
+    u.lang = preferredCode;
+    u.rate = 0.88; u.pitch = 1.0;
+    u.onend = () => { hideStatus(); if(callback) callback(); };
+    u.onerror = () => { hideStatus(); if(callback) callback(); };
+    window.speechSynthesis.speak(u);
+
+    setTimeout(() => {
+      if (window.speechSynthesis.speaking) return;
+      hideStatus(); if(callback) callback();
+    }, 8000);
+  });
 }
 
 // ── Speech recognition ───────────────────────────────────────────
@@ -593,7 +647,7 @@ function buildRecognition() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return null;
   const r = new SR();
-  r.lang = lang ? lang.code : 'en-NG';
+  r.lang = 'en-US';
   r.interimResults = false;
   r.maxAlternatives = 5;
   r.onstart = () => {
@@ -613,7 +667,14 @@ function buildRecognition() {
     setTimeout(() => processVoice(spoken), 200);
   };
   r.onerror = err => {
-    els.transcript.textContent = '⚠️ Could not hear you. Tap mic to try again.';
+    const msgs = {
+      'not-allowed': '🚫 Microphone access denied. Please allow mic access in your browser settings.',
+      'no-speech':   '🔇 No speech detected. Tap mic and try again.',
+      'network':     '📶 Network error. Check your connection and try again.',
+      'aborted':     '⏹️ Mic stopped. Tap mic to try again.'
+    };
+    show('transcript');
+    els.transcript.textContent = msgs[err.error] || '⚠️ Could not hear you. Tap mic to try again.';
     stopMic();
   };
   r.onend = () => { if(micActive) stopMic(); };
@@ -623,13 +684,18 @@ function buildRecognition() {
 function toggleMic() {
   if (micActive) { stopMic(); return; }
   window.speechSynthesis && window.speechSynthesis.cancel();
-  recognition = buildRecognition();
-  if (!recognition) {
-    alert('Voice input needs Chrome or Edge browser. Please use one of those.');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    show('transcript');
+    els.transcript.textContent = '⚠️ Voice input only works on Chrome or Edge browser. Please switch browsers or use the tap buttons below.';
     return;
   }
+  recognition = buildRecognition();
   try { recognition.start(); }
-  catch(e) { console.error(e); }
+  catch(e) {
+    show('transcript');
+    els.transcript.textContent = '⚠️ Could not start mic. Try tapping the mic button again.';
+  }
 }
 
 function stopMic() {
