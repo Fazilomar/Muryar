@@ -9,7 +9,7 @@ Click the link below to open and use the Muryar Banki prototype directly in your
 
 **👉 [https://647f957d-2b4b-41ad-b393-ac4aad6f828b-00-2ykebupszm9c5.riker.replit.dev](https://647f957d-2b4b-41ad-b393-ac4aad6f828b-00-2ykebupszm9c5.riker.replit.dev)**
 
-> **Best experience:** Open on **Google Chrome** or **Microsoft Edge** on a phone or computer for full voice input and voice output support.
+> ⚠️ **Important: You MUST use Google Chrome to access this prototype.** Voice speaking and voice recognition only work correctly on Google Chrome. Other browsers such as Firefox, Safari, and Opera do not fully support the voice features and the app will not work as expected.
 
 ---
 
