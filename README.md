@@ -3,6 +3,16 @@
 
 ---
 
+## 🚀 Try the Live Prototype
+
+Click the link below to open and use the Muryar Banki prototype directly in your browser — no installation needed:
+
+**👉 [https://647f957d-2b4b-41ad-b393-ac4aad6f828b-00-2ykebupszm9c5.riker.replit.dev](https://647f957d-2b4b-41ad-b393-ac4aad6f828b-00-2ykebupszm9c5.riker.replit.dev)**
+
+> **Best experience:** Open on **Google Chrome** or **Microsoft Edge** on a phone or computer for full voice input and voice output support.
+
+---
+
 ## The Problem
 
 Nigeria has over **200 million people**, yet a large portion of the population — including rural traders, farmers, artisans, market women, and daily wage earners — remain **financially excluded**. The reasons are deeply rooted:
