@@ -3,235 +3,460 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Muryar Banki – USSD Voice Simulator</title>
+<title>Muryar Banki – Voice Banking</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Segoe UI', sans-serif;
-    padding: 20px;
-  }
+body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0f1e, #0d1f35, #0a1828);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Segoe UI', sans-serif;
+  padding: 16px;
+}
 
-  .phone {
-    background: #1a1a2e;
-    border-radius: 40px;
-    width: 340px;
-    min-height: 620px;
-    box-shadow: 0 0 60px rgba(0,200,255,0.15), 0 0 0 6px #0d0d1a;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    position: relative;
-  }
+.phone {
+  background: #0d1220;
+  border-radius: 44px;
+  width: 360px;
+  min-height: 680px;
+  box-shadow: 0 0 80px rgba(0,180,255,0.12), 0 0 0 6px #080d18;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
-  .phone-top {
-    background: #0d0d1a;
-    padding: 12px;
-    display: flex;
-    justify-content: center;
-  }
-  .notch {
-    width: 80px; height: 10px;
-    background: #333;
-    border-radius: 10px;
-  }
+.phone-top {
+  background: #080d18;
+  padding: 14px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+.notch { width: 70px; height: 10px; background: #1a2030; border-radius: 10px; }
+.signal { display: flex; gap: 3px; align-items: flex-end; }
+.bar { width: 4px; background: #00bfff44; border-radius: 2px; }
+.bar:nth-child(1){height:6px; background:#00bfff;}
+.bar:nth-child(2){height:9px; background:#00bfff;}
+.bar:nth-child(3){height:12px; background:#00bfff;}
+.bar:nth-child(4){height:15px; background:#00bfff44;}
 
-  .screen {
-    background: #0b0b1a;
-    flex: 1;
-    padding: 20px 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    overflow-y: auto;
-  }
+.screen {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
 
-  .brand {
-    text-align: center;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #1e2a4a;
-  }
-  .brand h2 {
-    color: #00d4ff;
-    font-size: 18px;
-    letter-spacing: 1px;
-  }
-  .brand p {
-    color: #4a5a7a;
-    font-size: 11px;
-    margin-top: 2px;
-  }
+.brand {
+  text-align: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #1a2540;
+}
+.brand h2 { color: #00cfff; font-size: 17px; letter-spacing: 1px; }
+.brand p { color: #3a5070; font-size: 11px; margin-top: 2px; }
 
-  .display-box {
-    background: #0f1a30;
-    border: 1px solid #1e3050;
-    border-radius: 12px;
-    padding: 14px;
-    min-height: 90px;
-    font-size: 13px;
-    color: #c8d8f0;
-    line-height: 1.7;
-    white-space: pre-line;
-  }
+/* Status bar: speaking / listening */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+.status-bar.speaking {
+  background: #001a30;
+  border: 1px solid #00bfff44;
+  color: #00bfff;
+}
+.status-bar.listening {
+  background: #1a0010;
+  border: 1px solid #ff4488;
+  color: #ff4488;
+  animation: glow 1s infinite alternate;
+}
+@keyframes glow {
+  from { box-shadow: 0 0 4px #ff448844; }
+  to   { box-shadow: 0 0 14px #ff448866; }
+}
+.status-bar.hidden { display: none; }
 
-  .voice-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #0a1520;
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 12px;
-    color: #4a9eff;
-  }
-  .voice-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: #4a9eff;
-    animation: pulse 1.2s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.7); }
-  }
-  .voice-status.hidden { display: none; }
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  animation: blink 1s infinite;
+}
+.speaking .dot { background: #00bfff; }
+.listening .dot { background: #ff4488; }
+@keyframes blink {
+  0%,100%{ opacity:1; transform:scale(1); }
+  50%{ opacity:0.3; transform:scale(0.6); }
+}
 
-  .input-row {
-    display: flex;
-    gap: 8px;
-  }
-  .input-row input {
-    flex: 1;
-    background: #101830;
-    border: 1px solid #1e3a60;
-    border-radius: 10px;
-    color: #e0eeff;
-    padding: 10px 14px;
-    font-size: 15px;
-    outline: none;
-    letter-spacing: 2px;
-  }
-  .input-row input:focus {
-    border-color: #00d4ff;
-    box-shadow: 0 0 0 2px rgba(0,212,255,0.15);
-  }
-  .input-row input::placeholder { color: #2a4060; letter-spacing: 1px; }
+/* Main display */
+.display-box {
+  background: #080f20;
+  border: 1px solid #1a2e4a;
+  border-radius: 14px;
+  padding: 14px;
+  min-height: 80px;
+  font-size: 13px;
+  color: #b8d0f0;
+  line-height: 1.75;
+  white-space: pre-line;
+}
 
-  .btn-send {
-    background: #00d4ff;
-    color: #000;
-    border: none;
-    border-radius: 10px;
-    padding: 10px 16px;
-    font-weight: 700;
-    font-size: 14px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .btn-send:hover { background: #00b8e0; }
-  .btn-send:disabled { background: #1a3a50; color: #3a6080; cursor: not-allowed; }
+/* Icon grid for menu */
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.icon-btn {
+  background: #0a1830;
+  border: 1.5px solid #1a3050;
+  border-radius: 14px;
+  padding: 14px 6px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.icon-btn:hover, .icon-btn:active {
+  border-color: #00cfff;
+  background: #0d2040;
+  transform: scale(0.97);
+}
+.icon-btn .ico { font-size: 28px; }
+.icon-btn .lbl { font-size: 10px; color: #7090b0; text-align: center; line-height: 1.3; }
+.icon-btn .num {
+  font-size: 11px;
+  color: #00cfff;
+  font-weight: 700;
+  background: #001a30;
+  border-radius: 20px;
+  padding: 2px 7px;
+}
 
-  .keypad {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
-  .key {
-    background: #0f1e35;
-    border: 1px solid #1e3050;
-    border-radius: 12px;
-    color: #c8d8f0;
-    font-size: 20px;
-    font-weight: 600;
-    padding: 14px 0;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.15s;
-    user-select: none;
-  }
-  .key:hover { background: #172840; border-color: #00d4ff; color: #00d4ff; }
-  .key:active { transform: scale(0.94); }
-  .key.del { font-size: 14px; color: #ff6060; }
-  .key.send-key { background: #004466; color: #00d4ff; font-size: 14px; }
+/* Language buttons */
+.lang-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.lang-btn {
+  background: #0a1830;
+  border: 1.5px solid #1a3050;
+  border-radius: 12px;
+  padding: 12px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #b0c8e8;
+  font-size: 13px;
+  user-select: none;
+}
+.lang-btn:hover { border-color: #00cfff; background: #0d2040; }
+.lang-btn .flag { font-size: 20px; }
+.lang-btn .lnum { font-size: 11px; color: #00cfff; font-weight: 700; }
 
-  .step-label {
-    font-size: 11px;
-    color: #3a6080;
-    text-align: center;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
+/* Mic button */
+.mic-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.mic-btn {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #003a60, #005580);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  box-shadow: 0 0 20px rgba(0,180,255,0.2);
+  transition: all 0.2s;
+  position: relative;
+}
+.mic-btn.listening {
+  background: linear-gradient(135deg, #500030, #800050);
+  box-shadow: 0 0 30px rgba(255,60,130,0.4);
+  animation: mic-pulse 1s infinite;
+}
+@keyframes mic-pulse {
+  0%,100%{ transform: scale(1); }
+  50%{ transform: scale(1.08); }
+}
+.mic-btn:hover { transform: scale(1.06); }
+.mic-hint { font-size: 11px; color: #3a6080; text-align: center; }
 
-  .pill {
-    display: inline-block;
-    background: #001a2e;
-    border: 1px solid #00d4ff33;
-    border-radius: 20px;
-    padding: 3px 10px;
-    font-size: 11px;
-    color: #00d4ff;
-  }
+/* Keypad */
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.key {
+  background: #0a1830;
+  border: 1px solid #1a3050;
+  border-radius: 12px;
+  color: #b0c8e8;
+  font-size: 20px;
+  font-weight: 600;
+  padding: 13px 0;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.key:hover { background: #10243a; border-color: #00cfff; color: #00cfff; }
+.key:active { transform: scale(0.93); }
+.key.del { font-size: 14px; color: #ff6060; }
+.key.ok-key { background: #003a50; color: #00cfff; font-size: 14px; font-weight: 700; }
 
-  .success-box {
-    background: #001a0e;
-    border: 1px solid #00cc66;
-    border-radius: 12px;
-    padding: 14px;
-    color: #00cc66;
-    text-align: center;
-    font-size: 14px;
-    line-height: 1.6;
-  }
-  .success-box .check { font-size: 32px; margin-bottom: 6px; }
+/* USSD input row */
+.input-row { display: flex; gap: 8px; }
+.input-row input {
+  flex: 1;
+  background: #080f20;
+  border: 1px solid #1a3050;
+  border-radius: 10px;
+  color: #e0eeff;
+  padding: 10px 14px;
+  font-size: 15px;
+  outline: none;
+  letter-spacing: 2px;
+}
+.input-row input:focus { border-color: #00cfff; box-shadow: 0 0 0 2px rgba(0,207,255,0.12); }
+.input-row input::placeholder { color: #1e3a5a; }
 
-  .restart-btn {
-    background: transparent;
-    border: 1px solid #1e3050;
-    border-radius: 10px;
-    color: #4a9eff;
-    padding: 10px;
-    font-size: 13px;
-    cursor: pointer;
-    width: 100%;
-    transition: all 0.2s;
-  }
-  .restart-btn:hover { background: #0f1e35; }
+.btn-send {
+  background: #00cfff;
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.btn-send:hover { background: #00b0e0; }
 
-  .hidden { display: none !important; }
+/* PIN display */
+.pin-dots {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  padding: 8px 0;
+}
+.pin-dot {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 2px solid #1e3a5a;
+  background: transparent;
+  transition: all 0.2s;
+}
+.pin-dot.filled { background: #00cfff; border-color: #00cfff; }
+
+/* Success */
+.success-box {
+  background: #001a0e;
+  border: 1.5px solid #00cc66;
+  border-radius: 14px;
+  padding: 18px;
+  color: #00cc66;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.success-box .check { font-size: 40px; margin-bottom: 8px; }
+.success-sub { font-size: 12px; color: #009944; margin-top: 4px; }
+
+/* Step label */
+.step-label {
+  font-size: 11px;
+  color: #2a5070;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Voice transcript */
+.transcript-box {
+  background: #0a0f1a;
+  border: 1px solid #1a2a40;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #5080a0;
+  font-style: italic;
+  min-height: 36px;
+}
+
+.restart-btn {
+  background: transparent;
+  border: 1px solid #1a3050;
+  border-radius: 10px;
+  color: #4a9eff;
+  padding: 10px;
+  font-size: 13px;
+  cursor: pointer;
+  width: 100%;
+}
+.restart-btn:hover { background: #0a1830; }
+
+/* Self/Others toggle */
+.choice-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.choice-card {
+  background: #0a1830;
+  border: 1.5px solid #1a3050;
+  border-radius: 14px;
+  padding: 16px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.choice-card:hover { border-color: #00cfff; background: #0d2040; }
+.choice-card .ico { font-size: 30px; }
+.choice-card .lbl { font-size: 12px; color: #7090b0; }
+
+.tip-box {
+  background: #0a1020;
+  border: 1px solid #1a2535;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: #3a6080;
+  text-align: center;
+}
+
+.hidden { display: none !important; }
 </style>
 </head>
 <body>
-
 <div class="phone">
-  <div class="phone-top"><div class="notch"></div></div>
+  <div class="phone-top">
+    <div class="signal">
+      <div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div><div class="bar"></div>
+    </div>
+    <div class="notch"></div>
+    <div style="font-size:11px;color:#00bfff44;">&#128267;</div>
+  </div>
 
   <div class="screen">
     <div class="brand">
       <h2>&#128264; Muryar Banki</h2>
-      <p>Voice Banking Simulator</p>
+      <p>Voice Banking · Talk To Your Bank</p>
     </div>
 
-    <!-- Voice status indicator -->
-    <div class="voice-status hidden" id="voiceStatus">
-      <div class="voice-dot"></div>
-      <span id="voiceText">Speaking...</span>
+    <!-- Status indicator -->
+    <div class="status-bar hidden" id="statusBar">
+      <div class="dot"></div>
+      <span id="statusText">Speaking...</span>
     </div>
 
-    <!-- Display area -->
-    <div class="display-box" id="display">Enter your USSD code to begin.</div>
+    <!-- Display -->
+    <div class="display-box" id="display">Enter your USSD code below to begin.</div>
+
+    <!-- Transcript (voice input echo) -->
+    <div class="transcript-box hidden" id="transcript">You said: ...</div>
 
     <!-- Step label -->
     <div class="step-label" id="stepLabel">USSD Entry</div>
 
-    <!-- Input row -->
-    <div class="input-row" id="inputRow">
-      <input type="text" id="mainInput" placeholder="*770#" maxlength="30"/>
-      <button class="btn-send" id="sendBtn" onclick="handleSend()">OK</button>
+    <!-- USSD input -->
+    <div class="input-row" id="ussdRow">
+      <input type="text" id="ussdInput" placeholder="*770#" maxlength="20"/>
+      <button class="btn-send" onclick="handleUSSD()">OK</button>
+    </div>
+
+    <!-- Language selection -->
+    <div class="lang-grid hidden" id="langGrid">
+      <div class="lang-btn" onclick="selectLang('1')">
+        <span class="flag">🇬🇧</span>
+        <span>English</span>
+        <span class="lnum">1</span>
+      </div>
+      <div class="lang-btn" onclick="selectLang('2')">
+        <span class="flag">🇳🇬</span>
+        <span>Hausa</span>
+        <span class="lnum">2</span>
+      </div>
+      <div class="lang-btn" onclick="selectLang('3')">
+        <span class="flag">🇳🇬</span>
+        <span>Yoruba</span>
+        <span class="lnum">3</span>
+      </div>
+      <div class="lang-btn" onclick="selectLang('4')">
+        <span class="flag">🇳🇬</span>
+        <span>Igbo</span>
+        <span class="lnum">4</span>
+      </div>
+      <div class="lang-btn" onclick="selectLang('5')" style="grid-column:span 2; justify-content:center;">
+        <span class="flag">🇳🇬</span>
+        <span>Pidgin</span>
+        <span class="lnum">5</span>
+      </div>
+    </div>
+
+    <!-- Main menu icon grid -->
+    <div class="icon-grid hidden" id="menuGrid">
+      <div class="icon-btn" onclick="selectMenu('1')">
+        <span class="ico">💰</span>
+        <span class="num">1</span>
+        <span class="lbl" id="menuLbl1">Check Balance</span>
+      </div>
+      <div class="icon-btn" onclick="selectMenu('2')">
+        <span class="ico">📱</span>
+        <span class="num">2</span>
+        <span class="lbl" id="menuLbl2">Buy Airtime</span>
+      </div>
+      <div class="icon-btn" onclick="selectMenu('3')">
+        <span class="ico">💸</span>
+        <span class="num">3</span>
+        <span class="lbl" id="menuLbl3">Send Money</span>
+      </div>
+    </div>
+
+    <!-- Self or Others (airtime) -->
+    <div class="choice-row hidden" id="selfOtherRow">
+      <div class="choice-card" onclick="selectAirtimeTarget('self')">
+        <span class="ico">🙋</span>
+        <span class="lbl" id="selfLbl">Myself</span>
+      </div>
+      <div class="choice-card" onclick="selectAirtimeTarget('other')">
+        <span class="ico">👥</span>
+        <span class="lbl" id="otherLbl">Someone Else</span>
+      </div>
+    </div>
+
+    <!-- Mic section -->
+    <div class="mic-section hidden" id="micSection">
+      <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎙️</button>
+      <div class="mic-hint" id="micHint">Tap the mic and speak</div>
     </div>
 
     <!-- Keypad -->
@@ -247,315 +472,477 @@
       <div class="key" onclick="press('9')">9</div>
       <div class="key del" onclick="press('del')">⌫</div>
       <div class="key" onclick="press('0')">0</div>
-      <div class="key send-key" onclick="press('send')">OK</div>
+      <div class="key ok-key" onclick="press('ok')">OK</div>
     </div>
+
+    <!-- PIN dots -->
+    <div class="pin-dots hidden" id="pinDots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+
+    <!-- Tip box -->
+    <div class="tip-box hidden" id="tipBox"></div>
 
     <!-- Success -->
     <div class="hidden" id="successBox">
       <div class="success-box">
         <div class="check">✅</div>
-        <strong id="successMsg">Transaction Complete!</strong><br/>
-        <span id="successSub" style="font-size:12px; color:#00aa55;"></span>
+        <strong id="successMsg"></strong>
+        <div class="success-sub" id="successSub"></div>
       </div>
     </div>
 
-    <!-- Restart -->
     <button class="restart-btn hidden" id="restartBtn" onclick="restart()">&#8635; Start Over</button>
   </div>
 </div>
 
 <script>
-const STEPS = {
-  USSD: 'ussd',
-  LANGUAGE: 'language',
-  MENU: 'menu',
-  TRANSFER_ACCOUNT: 'transfer_account',
-  PIN: 'pin',
-  DONE: 'done'
-};
-
-const LANG_DATA = {
+// ─── Language data ───────────────────────────────────────────────
+const LANGS = {
   '1': {
-    name: 'English',
-    code: 'en-NG',
-    greet: 'Welcome to Muryar Banki.',
-    menuPrompt: 'Press 1 to check your account balance.\nPress 2 to buy airtime.\nPress 3 to transfer money.',
-    menuSpeak: 'Press 1 to check your account balance. Press 2 to buy airtime. Press 3 to transfer money.',
-    pinPrompt: 'Please enter your 4-digit account PIN on the keypad.',
-    pinSpeak: 'Please enter your 4-digit account PIN.',
-    accountPrompt: 'Please enter the recipient account number.',
-    accountSpeak: 'Please enter the recipient account number.',
-    done: 'Transaction complete! Thank you for using Muryar Banki.',
-    balance: 'Your account balance is 45,000 Naira.',
-    airtime: 'Airtime purchase successful.',
-    transfer: 'Money transfer successful.'
+    name:'English', code:'en-NG',
+    greet:'Welcome to Muryar Banki!',
+    langPrompt:'Choose your language.',
+    menuSpeak:'What would you like to do? Tap or say: Check Balance, Buy Airtime, or Send Money.',
+    menuLabels:['Check Balance','Buy Airtime','Send Money'],
+    selfOtherSpeak:'Is the airtime for yourself or someone else?',
+    selfLabel:'Myself', otherLabel:'Someone Else',
+    selfSpeak:'Airtime for yourself.',
+    otherSpeak:'Airtime for someone else. Please enter their phone number on the keypad.',
+    pinSpeak:'Please enter your 4-digit secret PIN to continue.',
+    accountSpeak:'Enter the recipient account number on the keypad.',
+    doneBalance:'Your account balance is 45,000 Naira.',
+    doneAirtimeSelf:'Airtime added to your line successfully!',
+    doneAirtimeOther:'Airtime sent to the other number successfully!',
+    doneTransfer:'Money transfer complete!',
+    pinTip:'🔒 Your PIN keeps your money safe.',
+    keywords:{
+      balance:['balance','check','money','how much','account'],
+      airtime:['airtime','credit','recharge','top up','topup'],
+      transfer:['send','transfer','pay','give'],
+      self:['myself','me','my','self','mine','my line'],
+      other:['other','someone','else','another','friend','family','them']
+    }
   },
   '2': {
-    name: 'Hausa',
-    code: 'ha',
-    greet: 'Barka da zuwa Muryar Banki.',
-    menuPrompt: 'Danna 1 don duba kuɗin asusunka.\nDanna 2 don siya airtime.\nDanna 3 don canja kuɗi.',
-    menuSpeak: 'Danna 1 don duba kuɗin asusunka. Danna 2 don siya airtime. Danna 3 don canja kuɗi.',
-    pinPrompt: 'Don Allah shigar da PIN ɗin asusunka na lambobi 4.',
-    pinSpeak: 'Don Allah shigar da PIN ɗin asusunka.',
-    accountPrompt: 'Shigar da lambar asusun wanda kake aikawa.',
-    accountSpeak: 'Shigar da lambar asusun wanda kake aikawa.',
-    done: 'Canjin ya cika! Na gode da amfani da Muryar Banki.',
-    balance: 'Kuɗin asusunka naira dubu arba\'in da biyar ne.',
-    airtime: 'An sayi airtime cikin nasara.',
-    transfer: 'An canja kuɗi cikin nasara.'
+    name:'Hausa', code:'ha',
+    greet:'Barka da zuwa Muryar Banki!',
+    langPrompt:'Zaɓi yaren ka.',
+    menuSpeak:'Me kake so ka yi? Ce ko danna: Duba Kuɗi, Siya Airtime, ko Aika Kuɗi.',
+    menuLabels:['Duba Kuɗi','Siya Airtime','Aika Kuɗi'],
+    selfOtherSpeak:'Airtime ɗin na gare ka ne ko wani?',
+    selfLabel:'Nawa', otherLabel:'Wani',
+    selfSpeak:'Airtime zuwa layin ka.',
+    otherSpeak:'Airtime zuwa wani. Shigar da lambar wayar su.',
+    pinSpeak:'Shigar da PIN ɗinku na lamba 4 don ci gaba.',
+    accountSpeak:'Shigar da lambar asusun wanda kake aika wa.',
+    doneBalance:'Kuɗin asusunka naira dubu arba\'in da biyar ne.',
+    doneAirtimeSelf:'An ƙara airtime a layin ka!',
+    doneAirtimeOther:'An aika airtime zuwa lambar! ',
+    doneTransfer:'An canja kuɗi cikin nasara!',
+    pinTip:'🔒 PIN ɗinka yana kare kuɗinka.',
+    keywords:{
+      balance:['kuɗi','asusun','duba','nawa','balance'],
+      airtime:['airtime','sim','na\'ura','recharge','siya'],
+      transfer:['aika','canja','transfer','biya','send'],
+      self:['kaina','nawa','ni','mine','self','myself'],
+      other:['wani','wata','su','other','else','wanda']
+    }
   },
   '3': {
-    name: 'Yoruba',
-    code: 'yo',
-    greet: 'E kaabo si Muryar Banki.',
-    menuPrompt: 'Tẹ 1 lati ṣayẹwo owo rẹ.\nTẹ 2 lati ra airtime.\nTẹ 3 lati gbigbe owo.',
-    menuSpeak: 'Tẹ 1 lati ṣayẹwo owo rẹ. Tẹ 2 lati ra airtime. Tẹ 3 lati gbigbe owo.',
-    pinPrompt: 'Jọwọ tẹ PIN akọọlẹ rẹ ti iṣiro 4 lori bọtini.',
-    pinSpeak: 'Jọwọ tẹ PIN akọọlẹ rẹ.',
-    accountPrompt: 'Jọwọ tẹ nọmba akọọlẹ olugba.',
-    accountSpeak: 'Jọwọ tẹ nọmba akọọlẹ olugba.',
-    done: 'Iṣowo ti pari! E dupe fun lilo Muryar Banki.',
-    balance: 'Iye owo ninu akọọlẹ rẹ jẹ naira ẹgbẹrin marun.',
-    airtime: 'Rira airtime ti ṣaṣeyọri.',
-    transfer: 'Gbigbe owo ti ṣaṣeyọri.'
+    name:'Yoruba', code:'yo',
+    greet:'E kaabo si Muryar Banki!',
+    langPrompt:'Yan ede rẹ.',
+    menuSpeak:'Kini o fẹ ṣe? Sọ tabi tẹ: Ṣayẹwo Owo, Ra Airtime, tabi Firanṣẹ Owo.',
+    menuLabels:['Ṣayẹwo Owo','Ra Airtime','Firanṣẹ Owo'],
+    selfOtherSpeak:'Airtime fun ara rẹ tabi fun ẹnikan miran?',
+    selfLabel:'Fun mi', otherLabel:'Fun ẹlomiran',
+    selfSpeak:'Airtime fun laini rẹ.',
+    otherSpeak:'Airtime fun ẹnikan miran. Tẹ nọmba fọnu wọn.',
+    pinSpeak:'Jọwọ tẹ PIN aṣiri rẹ ti nọmba mẹrin lati tẹsiwaju.',
+    accountSpeak:'Tẹ nọmba akọọlẹ olugba.',
+    doneBalance:'Iye owo ninu akọọlẹ rẹ jẹ naira ẹgbẹrin marun.',
+    doneAirtimeSelf:'Airtime ti ṣafikun si laini rẹ!',
+    doneAirtimeOther:'Airtime ti firanṣẹ si nọmba miran!',
+    doneTransfer:'Gbigbe owo ti ṣaṣeyọri!',
+    pinTip:'🔒 PIN rẹ ṣe aabo owo rẹ.',
+    keywords:{
+      balance:['owo','ayewo','balance','melo','akọọlẹ'],
+      airtime:['airtime','recharge','ra','credit','topup'],
+      transfer:['firanṣẹ','gbigbe','send','transfer','ranṣẹ','pay'],
+      self:['ara mi','fun mi','mi','myself','self','mine'],
+      other:['ẹlomiran','miran','ẹnikan','other','someone','else','friend']
+    }
   },
   '4': {
-    name: 'Igbo',
-    code: 'ig',
-    greet: 'Nnọọ na Muryar Banki.',
-    menuPrompt: 'Pịa 1 iji lelee ego gị.\nPịa 2 iji zụta airtime.\nPịa 3 iji bugharị ego.',
-    menuSpeak: 'Pịa 1 iji lelee ego gị. Pịa 2 iji zụta airtime. Pịa 3 iji bugharị ego.',
-    pinPrompt: 'Biko tinye PIN akanta gị nke nọmba 4 na keyboard.',
-    pinSpeak: 'Biko tinye PIN akanta gị.',
-    accountPrompt: 'Biko tinye nọmba akanta onye ọ bụla.',
-    accountSpeak: 'Biko tinye nọmba akanta onye ọ bụla.',
-    done: 'Azụmahịa emechara! Daalụ maka iji Muryar Banki.',
-    balance: 'Ego dị n\'akanta gị bụ naira iri atọ na abụọ puku.',
-    airtime: 'Ịzụta airtime gara nke ọma.',
-    transfer: 'Ịbufe ego gara nke ọma.'
+    name:'Igbo', code:'ig',
+    greet:'Nnọọ na Muryar Banki!',
+    langPrompt:'Họrọ asụsụ gị.',
+    menuSpeak:'Gịnị ịchọ ime? Kwuo ma ọ bụ pịa: Lelee Ego, Zụta Airtime, ma ọ bụ Zipụ Ego.',
+    menuLabels:['Lelee Ego','Zụta Airtime','Zipụ Ego'],
+    selfOtherSpeak:'Airtime maka onwe gị ka ọ bụ maka onye ọzọ?',
+    selfLabel:'Onwe m', otherLabel:'Onye ọzọ',
+    selfSpeak:'Airtime maka laịnị gị.',
+    otherSpeak:'Airtime maka onye ọzọ. Tinye nọmba ekwentị ha.',
+    pinSpeak:'Biko tinye PIN nzuzo gị nke nọmba anọ iji gaa n\'ihu.',
+    accountSpeak:'Tinye nọmba akanta onye ị na-eziga.',
+    doneBalance:'Ego dị n\'akanta gị bụ naira puku iri atọ na abụọ.',
+    doneAirtimeSelf:'Eweela airtime n\'ahọrọ gị!',
+    doneAirtimeOther:'Ezigara airtime nọmba ọzọ!',
+    doneTransfer:'Ibufe ego gara nke ọma!',
+    pinTip:'🔒 PIN gị echebe ego gị.',
+    keywords:{
+      balance:['ego','akanta','lelee','ole','balance','check'],
+      airtime:['airtime','recharge','zụta','credit','topup'],
+      transfer:['zipụ','bufe','send','transfer','pay','eziga'],
+      self:['onwe m','m','myself','self','mine','my'],
+      other:['onye ọzọ','ọzọ','other','someone','else','friend','another']
+    }
   },
   '5': {
-    name: 'Pidgin',
-    code: 'en-NG',
-    greet: 'Welcome to Muryar Banki. You don enter.',
-    menuPrompt: 'Press 1 to check your balance.\nPress 2 to buy airtime.\nPress 3 to send money.',
-    menuSpeak: 'Press 1 to check your balance. Press 2 to buy airtime. Press 3 to send money.',
-    pinPrompt: 'Abeg put your 4-digit PIN for the keypad.',
-    pinSpeak: 'Abeg put your 4-digit PIN.',
-    accountPrompt: 'Abeg put the account number of who you wan send money.',
-    accountSpeak: 'Abeg put the account number of who you wan send money.',
-    done: 'Transaction don complete! E don do. Thank you for using Muryar Banki.',
-    balance: 'Your account balance na 45,000 Naira.',
-    airtime: 'Airtime don enter your phone.',
-    transfer: 'You don send the money successfully.'
+    name:'Pidgin', code:'en-NG',
+    greet:'Welcome to Muryar Banki! You don enter!',
+    langPrompt:'Choose your language.',
+    menuSpeak:'Wetin you wan do? Talk or press: Check Balance, Buy Airtime, or Send Money.',
+    menuLabels:['Check Balance','Buy Airtime','Send Money'],
+    selfOtherSpeak:'Di airtime na for you or for another person?',
+    selfLabel:'Na for me', otherLabel:'For another person',
+    selfSpeak:'Airtime go enter your line.',
+    otherSpeak:'Airtime for another person. Enter their phone number.',
+    pinSpeak:'Abeg enter your 4-digit secret PIN to continue.',
+    accountSpeak:'Enter the account number of who you wan send.',
+    doneBalance:'Your balance na 45,000 Naira.',
+    doneAirtimeSelf:'Airtime don enter your line!',
+    doneAirtimeOther:'Airtime don reach the other number!',
+    doneTransfer:'You don send the money! E don do!',
+    pinTip:'🔒 Your PIN dey protect your money.',
+    keywords:{
+      balance:['balance','check','money','how much','wetin','account'],
+      airtime:['airtime','credit','recharge','top up','buy','topup'],
+      transfer:['send','transfer','give','pay','carry'],
+      self:['myself','me','my','self','mine','my line','for me'],
+      other:['other','someone','else','another','friend','family','them','another person']
+    }
   }
 };
 
-let step = STEPS.USSD;
+// ─── State ───────────────────────────────────────────────────────
+const S = {
+  USSD:'ussd', LANG:'lang', MENU:'menu',
+  AIRTIME_TARGET:'airtime_target',
+  ACCOUNT:'account', PIN:'pin', DONE:'done'
+};
+
+let step = S.USSD;
 let lang = null;
 let menuChoice = null;
-let pinBuffer = '';
-let accountBuffer = '';
-let speaking = false;
+let airtimeTarget = null;
+let pinBuf = '';
+let numBuf = '';
+let recognition = null;
+let micActive = false;
 
-const display = document.getElementById('display');
-const stepLabel = document.getElementById('stepLabel');
-const inputRow = document.getElementById('inputRow');
-const mainInput = document.getElementById('mainInput');
-const sendBtn = document.getElementById('sendBtn');
-const keypad = document.getElementById('keypad');
-const successBox = document.getElementById('successBox');
-const restartBtn = document.getElementById('restartBtn');
-const voiceStatus = document.getElementById('voiceStatus');
-const voiceText = document.getElementById('voiceText');
-const successMsg = document.getElementById('successMsg');
-const successSub = document.getElementById('successSub');
+// ─── DOM refs ─────────────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const display    = $('display');
+const stepLabel  = $('stepLabel');
+const statusBar  = $('statusBar');
+const statusText = $('statusText');
+const transcript = $('transcript');
+const ussdRow    = $('ussdRow');
+const langGrid   = $('langGrid');
+const menuGrid   = $('menuGrid');
+const selfOtherRow = $('selfOtherRow');
+const micSection = $('micSection');
+const micBtn     = $('micBtn');
+const micHint    = $('micHint');
+const keypad     = $('keypad');
+const pinDots    = $('pinDots');
+const tipBox     = $('tipBox');
+const successBox = $('successBox');
+const restartBtn = $('restartBtn');
 
-mainInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') handleSend();
-});
-
-function speak(text, langCode, callback) {
-  if (!window.speechSynthesis) {
-    if (callback) callback();
-    return;
-  }
+// ─── Speech synthesis ─────────────────────────────────────────────
+function speak(text, callback) {
+  if (!window.speechSynthesis) { if(callback) callback(); return; }
   window.speechSynthesis.cancel();
-  voiceStatus.classList.remove('hidden');
-  voiceText.textContent = 'Speaking...';
-
+  showStatus('speaking', 'Speaking...');
   const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = langCode || 'en-NG';
-  utter.rate = 0.92;
+  utter.lang = lang ? lang.code : 'en-NG';
+  utter.rate = 0.9;
   utter.pitch = 1.0;
-
-  utter.onend = () => {
-    voiceStatus.classList.add('hidden');
-    if (callback) callback();
-  };
-  utter.onerror = () => {
-    voiceStatus.classList.add('hidden');
-    if (callback) callback();
-  };
-
+  utter.onend = () => { hideStatus(); if(callback) callback(); };
+  utter.onerror = () => { hideStatus(); if(callback) callback(); };
   window.speechSynthesis.speak(utter);
 }
 
-function setDisplay(text) {
-  display.textContent = text;
+// ─── Speech recognition ───────────────────────────────────────────
+function setupRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const r = new SR();
+  r.lang = lang ? lang.code : 'en-NG';
+  r.interimResults = false;
+  r.maxAlternatives = 3;
+  r.onstart = () => {
+    micActive = true;
+    micBtn.classList.add('listening');
+    micHint.textContent = 'Listening... speak now';
+    showStatus('listening','Listening...');
+    transcript.classList.remove('hidden');
+    transcript.textContent = 'You said: ...';
+  };
+  r.onresult = e => {
+    const spoken = Array.from(e.results[0])
+      .map(a => a.transcript).join(' ').toLowerCase().trim();
+    transcript.textContent = 'You said: "' + spoken + '"';
+    stopMic();
+    processVoiceInput(spoken);
+  };
+  r.onerror = () => { stopMic(); };
+  r.onend = () => { stopMic(); };
+  return r;
 }
 
-function handleSend() {
-  const val = mainInput.value.trim();
-  mainInput.value = '';
+function toggleMic() {
+  if (micActive) { stopMic(); return; }
+  window.speechSynthesis && window.speechSynthesis.cancel();
+  recognition = setupRecognition();
+  if (!recognition) {
+    alert('Voice input is not supported in this browser. Please use Chrome or Edge.');
+    return;
+  }
+  recognition.start();
+}
 
-  if (step === STEPS.USSD) {
-    if (!val) return;
-    // Accept any USSD-like code
-    setDisplay(
-      'Select Language:\n\n1. English\n2. Hausa\n3. Yoruba\n4. Igbo\n5. Pidgin'
-    );
-    stepLabel.textContent = 'Language Selection';
-    step = STEPS.LANGUAGE;
-    speak(
-      'Welcome to Muryar Banki. Select your language. Press 1 for English. Press 2 for Hausa. Press 3 for Yoruba. Press 4 for Igbo. Press 5 for Pidgin.',
-      'en-NG'
-    );
+function stopMic() {
+  micActive = false;
+  micBtn.classList.remove('listening');
+  micHint.textContent = 'Tap the mic and speak';
+  hideStatus();
+  try { recognition && recognition.stop(); } catch(e){}
+}
 
-    // Switch to keypad
-    inputRow.classList.add('hidden');
+// ─── Intent detection ─────────────────────────────────────────────
+function detectIntent(spoken, keys) {
+  const kw = lang.keywords;
+  for (const k of keys) {
+    if (kw[k] && kw[k].some(w => spoken.includes(w))) return k;
+  }
+  return null;
+}
+
+function processVoiceInput(spoken) {
+  hideStatus();
+  if (step === S.MENU) {
+    const intent = detectIntent(spoken, ['balance','airtime','transfer']);
+    if (intent === 'balance')   { setTimeout(()=>selectMenu('1'),300); return; }
+    if (intent === 'airtime')   { setTimeout(()=>selectMenu('2'),300); return; }
+    if (intent === 'transfer')  { setTimeout(()=>selectMenu('3'),300); return; }
+    speak(lang.menuSpeak);
+    return;
+  }
+  if (step === S.AIRTIME_TARGET) {
+    const intent = detectIntent(spoken, ['self','other']);
+    if (intent === 'self')  { setTimeout(()=>selectAirtimeTarget('self'),300);  return; }
+    if (intent === 'other') { setTimeout(()=>selectAirtimeTarget('other'),300); return; }
+    speak(lang.selfOtherSpeak);
+    return;
+  }
+}
+
+// ─── Status bar ───────────────────────────────────────────────────
+function showStatus(mode, text) {
+  statusBar.className = 'status-bar ' + mode;
+  statusText.textContent = text;
+}
+function hideStatus() { statusBar.className = 'status-bar hidden'; }
+
+// ─── UI helpers ───────────────────────────────────────────────────
+function hideAll() {
+  [ussdRow,langGrid,menuGrid,selfOtherRow,micSection,keypad,
+   pinDots,tipBox,successBox,restartBtn,transcript].forEach(el=>{
+    el.classList.add('hidden');
+  });
+}
+
+function setDisplay(txt) { display.textContent = txt; }
+function setStep(lbl) { stepLabel.textContent = lbl; }
+
+function updatePinDots() {
+  for(let i=0;i<4;i++){
+    $('pd'+i).classList.toggle('filled', i < pinBuf.length);
+  }
+}
+
+// ─── Flow: USSD entry ─────────────────────────────────────────────
+$('ussdInput').addEventListener('keydown', e => { if(e.key==='Enter') handleUSSD(); });
+
+function handleUSSD() {
+  const v = $('ussdInput').value.trim();
+  if (!v) return;
+  hideAll();
+  setDisplay('Select your language\nChọn ngôn ngữ của bạn\n\n🇬🇧 English · 🇳🇬 Hausa · 🇳🇬 Yoruba · 🇳🇬 Igbo · 🇳🇬 Pidgin');
+  setStep('Language Selection');
+  langGrid.classList.remove('hidden');
+  step = S.LANG;
+  speak('Welcome to Muryar Banki. Please select your language.');
+}
+
+// ─── Flow: Language selection ─────────────────────────────────────
+function selectLang(key) {
+  lang = LANGS[key];
+  $('menuLbl1').textContent = lang.menuLabels[0];
+  $('menuLbl2').textContent = lang.menuLabels[1];
+  $('menuLbl3').textContent = lang.menuLabels[2];
+  $('selfLbl').textContent  = lang.selfLabel;
+  $('otherLbl').textContent = lang.otherLabel;
+  hideAll();
+  setDisplay(lang.greet + '\n\n' + lang.menuLabels[0] + ' · ' + lang.menuLabels[1] + ' · ' + lang.menuLabels[2]);
+  setStep('Main Menu');
+  menuGrid.classList.remove('hidden');
+  micSection.classList.remove('hidden');
+  transcript.classList.remove('hidden');
+  transcript.textContent = 'Tap 🎙️ and say what you want, or tap an option above.';
+  step = S.MENU;
+  speak(lang.greet + ' ' + lang.menuSpeak);
+}
+
+// ─── Flow: Main menu ─────────────────────────────────────────────
+function selectMenu(choice) {
+  menuChoice = choice;
+  if (choice === '1') {
+    goToPin(lang.menuLabels[0]);
+  } else if (choice === '2') {
+    hideAll();
+    setDisplay(lang.selfOtherSpeak);
+    setStep('Airtime');
+    selfOtherRow.classList.remove('hidden');
+    micSection.classList.remove('hidden');
+    transcript.classList.remove('hidden');
+    transcript.textContent = 'Say "' + lang.selfLabel + '" or "' + lang.otherLabel + '"';
+    step = S.AIRTIME_TARGET;
+    speak(lang.selfOtherSpeak);
+  } else if (choice === '3') {
+    hideAll();
+    setDisplay(lang.accountSpeak);
+    setStep('Account Number');
     keypad.classList.remove('hidden');
-    pinBuffer = '';
+    tipBox.classList.remove('hidden');
+    tipBox.textContent = '📲 Enter 10-digit account number, then press OK.';
+    numBuf = '';
+    step = S.ACCOUNT;
+    speak(lang.accountSpeak);
+  }
+}
+
+// ─── Flow: Airtime – self or other ───────────────────────────────
+function selectAirtimeTarget(target) {
+  airtimeTarget = target;
+  if (target === 'self') {
+    speak(lang.selfSpeak, () => goToPin(lang.menuLabels[1]));
+  } else {
+    hideAll();
+    setDisplay(lang.otherSpeak);
+    setStep('Phone Number');
+    keypad.classList.remove('hidden');
+    tipBox.classList.remove('hidden');
+    tipBox.textContent = '📲 Enter their phone number, then press OK.';
+    numBuf = '';
+    step = S.ACCOUNT;
+    speak(lang.otherSpeak);
+  }
+}
+
+// ─── Flow: Account / Phone number entry ──────────────────────────
+function goToPin(label) {
+  hideAll();
+  setDisplay(lang.pinSpeak);
+  setStep('Secret PIN');
+  keypad.classList.remove('hidden');
+  pinDots.classList.remove('hidden');
+  tipBox.classList.remove('hidden');
+  tipBox.textContent = lang.pinTip;
+  pinBuf = '';
+  updatePinDots();
+  step = S.PIN;
+  speak(lang.pinSpeak);
+}
+
+// ─── Keypad handler ───────────────────────────────────────────────
+function press(k) {
+  if (step === S.ACCOUNT) {
+    if (k === 'del') { numBuf = numBuf.slice(0,-1); }
+    else if (k === 'ok') {
+      if (numBuf.length < 6) {
+        speak('Please enter a valid number.');
+        return;
+      }
+      goToPin(menuChoice === '2' ? lang.menuLabels[1] : lang.menuLabels[2]);
+      return;
+    } else if (/\d/.test(k) && numBuf.length < 10) { numBuf += k; }
+    const maxLen = (menuChoice === '2' && airtimeTarget === 'other') ? 11 : 10;
+    setDisplay((menuChoice === '2' ? lang.otherSpeak : lang.accountSpeak) + '\n\n📲 ' + (numBuf || '—'));
+    return;
+  }
+
+  if (step === S.PIN) {
+    if (k === 'del') {
+      pinBuf = pinBuf.slice(0,-1);
+    } else if (k === 'ok') {
+      if (pinBuf.length < 4) { speak(lang.pinSpeak); return; }
+      completeTx();
+      return;
+    } else if (/\d/.test(k) && pinBuf.length < 4) {
+      pinBuf += k;
+      if (pinBuf.length === 4) { setTimeout(completeTx, 500); }
+    }
+    updatePinDots();
     return;
   }
 }
 
-function press(key) {
-  if (step === STEPS.LANGUAGE) {
-    if (!['1','2','3','4','5'].includes(key)) return;
-    lang = LANG_DATA[key];
-    setDisplay(
-      lang.name + '\n\n' + lang.greet + '\n\n' +
-      'What would you like to do?\n\n' + lang.menuPrompt
-    );
-    stepLabel.textContent = 'Main Menu';
-    step = STEPS.MENU;
-    speak(lang.greet + ' ' + lang.menuSpeak, lang.code);
-    pinBuffer = '';
-    return;
-  }
+// ─── Flow: Complete ───────────────────────────────────────────────
+function completeTx() {
+  hideAll();
+  step = S.DONE;
+  setStep('Done');
 
-  if (step === STEPS.MENU) {
-    if (!['1','2','3'].includes(key)) return;
-    menuChoice = key;
-    if (key === '1') {
-      // Check balance – go straight to PIN
-      setDisplay(lang.menuPrompt.split('\n')[0] + '\n\n' + lang.pinPrompt);
-      stepLabel.textContent = 'Enter PIN';
-      step = STEPS.PIN;
-      speak(lang.pinSpeak, lang.code);
-      pinBuffer = '';
-    } else if (key === '2') {
-      // Buy airtime – go to PIN
-      setDisplay(lang.menuPrompt.split('\n')[1] + '\n\n' + lang.pinPrompt);
-      stepLabel.textContent = 'Enter PIN';
-      step = STEPS.PIN;
-      speak(lang.pinSpeak, lang.code);
-      pinBuffer = '';
-    } else if (key === '3') {
-      // Transfer – ask for account number first
-      setDisplay(lang.accountPrompt);
-      stepLabel.textContent = 'Account Number';
-      step = STEPS.TRANSFER_ACCOUNT;
-      speak(lang.accountSpeak, lang.code);
-      accountBuffer = '';
-      pinBuffer = '';
-    }
-    return;
+  let msg = '', sub = '';
+  if (menuChoice === '1') { msg = '✅ ' + lang.doneBalance; }
+  else if (menuChoice === '2') {
+    msg = airtimeTarget === 'self' ? '✅ ' + lang.doneAirtimeSelf : '✅ ' + lang.doneAirtimeOther;
+  } else {
+    msg = '✅ ' + lang.doneTransfer;
   }
+  sub = 'Thank you for using Muryar Banki!';
 
-  if (step === STEPS.TRANSFER_ACCOUNT) {
-    if (key === 'del') {
-      accountBuffer = accountBuffer.slice(0, -1);
-    } else if (key === 'send') {
-      if (accountBuffer.length < 6) {
-        setDisplay(lang.accountPrompt + '\n\n⚠ Enter a valid account number (min 6 digits).');
-        return;
-      }
-      setDisplay(lang.pinPrompt);
-      stepLabel.textContent = 'Enter PIN';
-      step = STEPS.PIN;
-      speak(lang.pinSpeak, lang.code);
-      pinBuffer = '';
-      accountBuffer = '';
-      return;
-    } else if (/\d/.test(key)) {
-      if (accountBuffer.length < 10) accountBuffer += key;
-    }
-    setDisplay(lang.accountPrompt + '\n\nAccount: ' + accountBuffer);
-    return;
-  }
-
-  if (step === STEPS.PIN) {
-    if (key === 'del') {
-      pinBuffer = pinBuffer.slice(0, -1);
-    } else if (key === 'send') {
-      if (pinBuffer.length < 4) {
-        setDisplay(lang.pinPrompt + '\n\n⚠ PIN must be at least 4 digits.');
-        return;
-      }
-      processDone();
-      return;
-    } else if (/\d/.test(key)) {
-      if (pinBuffer.length < 4) pinBuffer += key;
-      if (pinBuffer.length === 4) {
-        // Auto-submit
-        setTimeout(() => processDone(), 400);
-      }
-    }
-    const masked = '●'.repeat(pinBuffer.length) + '○'.repeat(4 - pinBuffer.length);
-    setDisplay(lang.pinPrompt + '\n\nPIN: ' + masked);
-    return;
-  }
-}
-
-function processDone() {
-  step = STEPS.DONE;
-  keypad.classList.add('hidden');
+  $('successMsg').textContent = msg;
+  $('successSub').textContent = sub;
   successBox.classList.remove('hidden');
   restartBtn.classList.remove('hidden');
-  stepLabel.textContent = 'Complete';
-
-  let detail = '';
-  if (menuChoice === '1') detail = lang.balance;
-  else if (menuChoice === '2') detail = lang.airtime;
-  else if (menuChoice === '3') detail = lang.transfer;
-
-  successMsg.textContent = lang.done.split('!')[0] + '!';
-  successSub.textContent = detail;
-
-  speak(lang.done + ' ' + detail, lang.code);
+  setDisplay('');
+  display.classList.add('hidden');
+  speak(msg + ' ' + sub);
 }
 
+// ─── Restart ──────────────────────────────────────────────────────
 function restart() {
-  step = STEPS.USSD;
-  lang = null;
-  menuChoice = null;
-  pinBuffer = '';
-  accountBuffer = '';
-
-  setDisplay('Enter your USSD code to begin.');
-  stepLabel.textContent = 'USSD Entry';
-
-  mainInput.value = '';
-  inputRow.classList.remove('hidden');
-  keypad.classList.add('hidden');
-  successBox.classList.add('hidden');
-  restartBtn.classList.add('hidden');
-  voiceStatus.classList.add('hidden');
-
-  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  step = S.USSD; lang = null; menuChoice = null;
+  airtimeTarget = null; pinBuf = ''; numBuf = '';
+  stopMic();
+  window.speechSynthesis && window.speechSynthesis.cancel();
+  hideStatus(); hideAll();
+  display.classList.remove('hidden');
+  $('ussdInput').value = '';
+  setDisplay('Enter your USSD code below to begin.');
+  setStep('USSD Entry');
+  ussdRow.classList.remove('hidden');
+  updatePinDots();
+  transcript.textContent = '';
 }
 </script>
 </body>
