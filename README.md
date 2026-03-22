@@ -124,6 +124,119 @@ This engine supports multiple alternative phrases per intent per language, makin
 
 ---
 
+## Security Protocols
+
+Protecting users' financial data and privacy is a core part of Muryar Banki's design — especially because the target users are often the most vulnerable to fraud and social engineering. The following security protocols are implemented across the system:
+
+---
+
+### 1. PIN Never Transmitted as Voice or Text
+
+The user's secret PIN is entered **only through the physical on-screen keypad** and is never:
+- Spoken aloud by the user (the mic is inactive during PIN entry)
+- Displayed as readable characters on screen (shown as masked dots ●●●●)
+- Transmitted to any third-party server
+- Stored anywhere on the device or in the browser
+
+This protects users from **shoulder surfing** (someone watching the screen) and **voice eavesdropping** (someone nearby hearing the PIN spoken).
+
+---
+
+### 2. On-Device Voice Processing — No Data Leaves the Phone
+
+All voice recognition in Muryar Banki uses the **browser's built-in Web Speech API**, which processes audio directly on the user's device (on-device inference in Chrome/Edge). This means:
+
+- The user's voice is **not sent to any external server** during intent detection
+- No audio recordings are stored or logged
+- No third-party AI company receives the user's spoken commands
+- The session ends cleanly with no audio trail left behind
+
+---
+
+### 3. No Personal Data Collected or Stored
+
+Muryar Banki does not collect, store, or transmit any personally identifiable information (PII). This includes:
+
+- No name, phone number, or BVN stored
+- No account numbers saved to any database after the session
+- No transaction history sent to an external server
+- Session data (like the entered account number) lives only in the browser's memory and is wiped the moment the user presses **Start Over** or closes the app
+
+---
+
+### 4. Account Number Confirmation Before Transfer
+
+Before any money transfer is executed, the system reads the account number back to the user **digit by digit** and asks for explicit confirmation:
+
+```
+"The account number you entered is: 0, 8, 1, 2, 3, 4, 5, 6, 7, 8. Is that correct?"
+```
+
+The user must tap ✅ **Correct** to proceed, or ❌ **Re-enter** to correct a mistake. This protects against:
+- **Accidental wrong transfers** caused by mis-keyed digits
+- **Social engineering attacks** where a fraudster tricks a user into sending to the wrong account
+- **Fat-finger errors** on small keypads
+
+---
+
+### 5. Session Isolation — Each Session is Fresh
+
+Every time the user starts a session (by entering a USSD code), the app creates a completely fresh state:
+
+- No data from a previous session is carried over
+- No cookies or persistent tokens are used
+- If the phone is shared (as is common in rural households), the previous user's data is not visible to the next user
+
+---
+
+### 6. HTTPS Encryption in Transit
+
+When deployed, Muryar Banki is served over **HTTPS (TLS encryption)**, meaning:
+
+- All communication between the user's browser and the server is encrypted
+- Hackers on the same Wi-Fi network or mobile data network cannot intercept or read the traffic (Man-in-the-Middle protection)
+- Data cannot be tampered with in transit
+
+---
+
+### 7. Backend API Security (FastAPI)
+
+The backend server, built with **FastAPI**, implements the following:
+
+- **No sensitive user data is processed server-side** — the backend only serves the frontend simulator; it does not handle PINs, account numbers, or balances
+- FastAPI's automatic request validation rejects malformed or unexpected inputs, reducing the attack surface
+- In a production deployment, the API would be protected with **rate limiting** to prevent brute-force attacks
+
+---
+
+### 8. Protection Against Social Engineering
+
+Because the primary users are low-literacy individuals who may be easily tricked, Muryar Banki includes built-in anti-fraud design choices:
+
+| Risk | Protection Built In |
+|---|---|
+| Fraudster watches screen for PIN | PIN shown only as ●●●● dots |
+| Fraudster listens for PIN spoken | Mic is automatically OFF during PIN step |
+| User sends to wrong account | Account number read aloud + confirmation screen |
+| User panics mid-session | "Start Over" button cancels everything cleanly |
+| Shared phone exposes data | No data persists between sessions |
+| Phishing — fake app looks real | On-device processing; no external API calls |
+
+---
+
+### 9. Future Security Enhancements (Production Roadmap)
+
+For a full production deployment, the following additional security layers would be added:
+
+- **Biometric authentication** — fingerprint or face ID to replace PIN on supported devices
+- **OTP (One-Time Password)** — SMS code sent to the registered phone number for high-value transactions
+- **End-to-end encryption (E2EE)** — for all voice and data payloads between device and bank server
+- **Fraud detection AI** — machine learning model that flags unusual transaction patterns (e.g. large transfer to a new account at 2am)
+- **SIM card binding** — session linked to the registered SIM so the account cannot be accessed from an unfamiliar device
+- **Automatic session timeout** — session expires after 60 seconds of inactivity to protect unattended phones
+
+---
+
 ## Technology Stack
 
 | Layer | Technology |
@@ -133,7 +246,7 @@ This engine supports multiple alternative phrases per intent per language, makin
 | Voice Output | Web Speech API (SpeechSynthesis) |
 | Voice Input | Web Speech API (SpeechRecognition) |
 | Intent AI | Custom multilingual keyword engine |
-| Deployment | Replit |
+| Deployment | Replit · HTTPS (TLS) |
 
 ---
 
