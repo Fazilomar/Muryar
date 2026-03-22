@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "1NU14rv2-o8__ec_tU0Jm"
+uri = "file://README.md"
+type = "text"
+title = "Muryar Banki – Project README"
